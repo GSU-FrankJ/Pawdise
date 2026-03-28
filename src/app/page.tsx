@@ -16,6 +16,13 @@ interface Star {
 export default function Home() {
   const [stars, setStars] = useState<Star[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setLoggedIn(true);
+    });
+  }, []);
 
   useEffect(() => {
     setStars(
@@ -131,20 +138,29 @@ export default function Home() {
                 />
               </svg>
             </Link>
-            <button
-              type="button"
-              onClick={() =>
-                supabase.auth.signInWithOAuth({
-                  provider: 'google',
-                  options: {
-                    redirectTo: `${window.location.origin}/auth/callback`,
-                  },
-                })
-              }
-              className="inline-flex items-center gap-2 text-cosmic-muted hover:text-cosmic-text font-body font-medium text-sm transition-all duration-300 border border-cosmic-accent/20 hover:border-cosmic-accent/40 px-6 py-3 rounded-full"
-            >
-              Login
-            </button>
+            {loggedIn ? (
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 text-cosmic-muted hover:text-cosmic-text font-body font-medium text-sm transition-all duration-300 border border-cosmic-accent/20 hover:border-cosmic-accent/40 px-6 py-3 rounded-full"
+              >
+                My Pets
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() =>
+                  supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                      redirectTo: `${window.location.origin}/auth/callback`,
+                    },
+                  })
+                }
+                className="inline-flex items-center gap-2 text-cosmic-muted hover:text-cosmic-text font-body font-medium text-sm transition-all duration-300 border border-cosmic-accent/20 hover:border-cosmic-accent/40 px-6 py-3 rounded-full"
+              >
+                Login
+              </button>
+            )}
           </div>
         </div>
       </div>
