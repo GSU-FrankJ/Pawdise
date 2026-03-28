@@ -74,35 +74,43 @@ export default function PetPage() {
   useEffect(() => {
     if (status !== 'loading' || artReady || !pet) return;
 
-    const interval = setInterval(async () => {
+    // First poll immediately, then every 3s
+    let cancelled = false;
+    const poll = async () => {
       const res = await fetch(`/api/pets/${params.id}/pixel-art-status`);
       const data = await res.json();
 
       if (data.status === 'complete' && data.pixel_art_url) {
         setPet((p) => (p ? { ...p, pixel_art_url: data.pixel_art_url } : p));
+        // Art was already generated on Replicate — skip 5s wait
+        skipLoading.current = true;
         setArtReady(true);
-        clearInterval(interval);
       }
+    };
+
+    poll();
+    const interval = setInterval(() => {
+      if (!cancelled) poll();
     }, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [status, artReady, pet, params.id]);
 
-  // Transition when art ready + minimum 5s displayed
-  const startTransition = useCallback(() => {
-    setStatus('transitioning');
-    setTimeout(() => setStatus('ready'), 800);
-  }, []);
-
+  // Transition when art ready
   useEffect(() => {
     if (!artReady || status !== 'loading') return;
-    // Skip 5s wait if pet is already fully generated
     if (skipLoading.current) {
-      startTransition();
+      // Instant transition for returning visits
+      setStatus('ready');
     } else if (elapsedMs >= 5000) {
-      startTransition();
+      // Animated transition for first-time generation
+      setStatus('transitioning');
+      setTimeout(() => setStatus('ready'), 800);
     }
-  }, [artReady, elapsedMs, status, startTransition]);
+  }, [artReady, elapsedMs, status]);
 
   // Fetch activity when ready
   useEffect(() => {
