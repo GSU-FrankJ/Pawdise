@@ -12,12 +12,24 @@ export async function GET(
 
   const { data: pet, error: petError } = await supabaseAdmin
     .from("pets")
-    .select("id, name, species, breed, traits, habits, bio")
+    .select("id, name, species, breed, traits, habits, bio, current_activity, current_scene, last_activity_at")
     .eq("id", id)
     .single();
 
   if (petError || !pet) {
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  }
+
+  // Reuse existing activity if generated within the last 5 minutes
+  if (pet.current_activity && pet.last_activity_at) {
+    const age = Date.now() - new Date(pet.last_activity_at).getTime();
+    if (age < 5 * 60 * 1000) {
+      return NextResponse.json({
+        activity: pet.current_activity,
+        scene: pet.current_scene,
+        generated_at: pet.last_activity_at,
+      });
+    }
   }
 
   const result = await generateActivity(pet);
