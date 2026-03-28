@@ -9,32 +9,56 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      // Supabase exchanges the code for a session automatically
+      // Supabase returns tokens in the URL hash — this listens for the session
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          subscription.unsubscribe();
+
+          const sessionId = localStorage.getItem('pawdise_session_id');
+          const petId = localStorage.getItem('pawdise_pet_id');
+
+          if (sessionId && petId) {
+            await fetch(`/api/pets/${petId}/claim`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ session_id: sessionId }),
+            });
+
+            localStorage.removeItem('pawdise_session_id');
+            localStorage.removeItem('pawdise_pet_id');
+            router.push(`/pet/${petId}`);
+          } else {
+            router.push('/');
+          }
+        }
+      });
+
+      // Also check if session already exists (e.g. page refresh)
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session) {
-        router.push('/');
-        return;
-      }
+      if (session) {
+        subscription.unsubscribe();
 
-      // Check if there's a guest pet to claim
-      const sessionId = localStorage.getItem('pawdise_session_id');
-      const petId = localStorage.getItem('pawdise_pet_id');
+        const sessionId = localStorage.getItem('pawdise_session_id');
+        const petId = localStorage.getItem('pawdise_pet_id');
 
-      if (sessionId && petId) {
-        await fetch(`/api/pets/${petId}/claim`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: sessionId }),
-        });
+        if (sessionId && petId) {
+          await fetch(`/api/pets/${petId}/claim`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId }),
+          });
 
-        localStorage.removeItem('pawdise_session_id');
-        localStorage.removeItem('pawdise_pet_id');
-        router.push(`/pet/${petId}`);
-      } else {
-        router.push('/');
+          localStorage.removeItem('pawdise_session_id');
+          localStorage.removeItem('pawdise_pet_id');
+          router.push(`/pet/${petId}`);
+        } else {
+          router.push('/');
+        }
       }
     };
 

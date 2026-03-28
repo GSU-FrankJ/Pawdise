@@ -135,7 +135,7 @@ pixel-art/
 Example path:
 
 ```
-pet-photos/{pet_id}/pet.png
+pet-photos/{pet_id}/photo.png
 pixel-art/{pet_id}/pixel.png
 ```
 

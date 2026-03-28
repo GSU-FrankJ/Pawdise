@@ -28,7 +28,7 @@ export async function POST(
 
   // Upload original photo to Supabase Storage
   const buffer = await file.arrayBuffer();
-  const path = `${id}.${file.type === "image/png" ? "png" : "jpg"}`;
+  const path = `${id}/photo.${file.type === "image/png" ? "png" : "jpg"}`;
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from("pet-photos")

@@ -67,7 +67,7 @@ export async function savePixelArtToStorage(
 ): Promise<string> {
   const response = await fetch(imageUrl);
   const buffer = await response.arrayBuffer();
-  const path = `${petId}.png`;
+  const path = `${petId}/pixel.png`;
 
   const { error } = await supabaseAdmin.storage
     .from("pixel-art")

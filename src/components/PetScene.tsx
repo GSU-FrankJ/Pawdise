@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getSpeciesEmoji } from './SpeciesEmoji';
 import { supabase } from '@/lib/supabase-browser';
+import type { User } from '@supabase/supabase-js';
 
 interface PetSceneProps {
   petName: string;
@@ -30,6 +31,11 @@ export default function PetScene({
 }: PetSceneProps) {
   const emoji = getSpeciesEmoji(species);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+  }, []);
 
   return (
     <div
@@ -44,20 +50,26 @@ export default function PetScene({
         >
           Pawdise
         </Link>
-        <button
-          type="button"
-          onClick={() =>
-            supabase.auth.signInWithOAuth({
-              provider: 'google',
-              options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
-              },
-            })
-          }
-          className="text-cosmic-muted hover:text-cosmic-text text-sm font-body font-medium transition-colors border border-cosmic-accent/20 px-4 py-1.5 rounded-full"
-        >
-          Sign in
-        </button>
+        {user ? (
+          <span className="text-cosmic-muted text-sm font-body font-medium px-4 py-1.5">
+            {user.user_metadata?.full_name ?? user.email ?? 'Signed in'}
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() =>
+              supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                  redirectTo: `${window.location.origin}/auth/callback`,
+                },
+              })
+            }
+            className="text-cosmic-muted hover:text-cosmic-text text-sm font-body font-medium transition-colors border border-cosmic-accent/20 px-4 py-1.5 rounded-full"
+          >
+            Sign in
+          </button>
+        )}
       </nav>
 
       <div className="flex-1 flex flex-col items-center px-5 pt-4 pb-12">
