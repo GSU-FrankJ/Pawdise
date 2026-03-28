@@ -68,7 +68,7 @@ A trigger automatically creates a corresponding profile when a user signs up.
 
 # Tables
 
-## profiles
+## profiles (Legacy)
 
 Stores application-level user information.
 
@@ -95,7 +95,7 @@ Stores all pets belonging to users.
 | Column             | Type      | Description                |
 | ------------------ | --------- | -------------------------- |
 | id                 | uuid (PK) | Pet ID                     |
-| owner_id           | uuid (FK) | References `profiles.id`   |
+| owner_id           | uuid (FK) | References `auth.users.id` |
 | session_id         | uuid      | For guest                  |
 | name               | text      | Pet name                   |
 | species            | text      | Type of pet                |
