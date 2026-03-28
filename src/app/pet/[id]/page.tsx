@@ -6,12 +6,15 @@ import Starfield from '@/components/Starfield';
 import EmotionalLoading from '@/components/EmotionalLoading';
 import PetScene from '@/components/PetScene';
 
-// --- Mock data (replace with real API when Person A delivers) ---
-const MOCK_PET = {
-  name: 'Mochi',
-  species: 'Cat',
-  pixel_art_url: null as string | null,
-};
+interface PetData {
+  id: string;
+  name: string;
+  species: string;
+  breed: string | null;
+  pixel_art_url: string | null;
+  current_activity: string | null;
+  current_scene: string | null;
+}
 
 interface ActivityData {
   activity: string;
@@ -21,20 +24,6 @@ interface ActivityData {
   mood: string;
 }
 
-// TODO: Replace with real GET /api/pets/[id]/activity
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function fetchActivity(petId: string): Promise<ActivityData> {
-  await new Promise((r) => setTimeout(r, 500));
-  return {
-    activity:
-      'Mochi found a warm patch of starlight and curled up for a nap.',
-    scene: 'cosmic meadow',
-    timeOfDay: 'afternoon',
-    weather: 'starlit',
-    mood: 'peaceful',
-  };
-}
-
 type PageStatus = 'loading' | 'transitioning' | 'ready';
 
 export default function PetPage() {
@@ -42,10 +31,15 @@ export default function PetPage() {
   const [status, setStatus] = useState<PageStatus>('loading');
   const [showReassurance, setShowReassurance] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
-  const [artReady, setArtReady] = useState(false);
+  const [pet, setPet] = useState<PetData | null>(null);
   const [activityData, setActivityData] = useState<ActivityData | null>(null);
 
-  // Track elapsed time
+  const startTransition = useCallback(() => {
+    setStatus('transitioning');
+    setTimeout(() => setStatus('ready'), 800);
+  }, []);
+
+  // Track elapsed time during loading
   useEffect(() => {
     if (status !== 'loading') return;
     const interval = setInterval(() => setElapsedMs((t) => t + 1000), 1000);
@@ -57,50 +51,90 @@ export default function PetPage() {
     if (elapsedMs >= 30000 && !showReassurance) setShowReassurance(true);
   }, [elapsedMs, showReassurance]);
 
-  // Mock polling: pixel art "completes" after 8s
+  // Fetch pet data + start polling or skip straight to ready
   useEffect(() => {
-    if (status !== 'loading') return;
-    const interval = setInterval(() => {
-      // TODO: Replace with real GET /api/pets/[id]/pixel-art-status
-      if (elapsedMs >= 3000) {
-        setArtReady(true);
-        clearInterval(interval);
+    if (!params.id) return;
+
+    async function init() {
+      const res = await fetch(`/api/pets/${params.id}`);
+      if (!res.ok) return;
+      const data: PetData = await res.json();
+      setPet(data);
+
+      // Already has pixel art — show immediately after short delay
+      if (data.pixel_art_url) {
+        setTimeout(() => startTransition(), 1200);
+        return;
       }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [status, elapsedMs]);
 
-  // Transition when art ready + minimum 5s displayed
-  const startTransition = useCallback(() => {
-    setStatus('transitioning');
-    setTimeout(() => setStatus('ready'), 800);
-  }, []);
+      // No pixel art yet — poll for completion
+      const poll = setInterval(async () => {
+        const r = await fetch(`/api/pets/${params.id}/pixel-art-status`);
+        const j = await r.json();
+        if (j.status === 'complete' && j.pixel_art_url) {
+          clearInterval(poll);
+          setPet((prev) => prev ? { ...prev, pixel_art_url: j.pixel_art_url } : prev);
+        }
+      }, 3000);
 
-  useEffect(() => {
-    if (artReady && elapsedMs >= 5000 && status === 'loading') {
-      startTransition();
+      // Min 5s loading then transition when art ready
+      const check = setInterval(() => {
+        setElapsedMs((t) => {
+          if (t >= 5000) {
+            clearInterval(check);
+            clearInterval(poll);
+            startTransition();
+          }
+          return t;
+        });
+      }, 500);
     }
-  }, [artReady, elapsedMs, status, startTransition]);
+
+    init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.id]);
 
   // Fetch activity when ready
   useEffect(() => {
-    if (status !== 'ready' || activityData) return;
-    fetchActivity(params.id).then(setActivityData);
-  }, [status, activityData, params.id]);
+    if (status !== 'ready' || activityData || !pet) return;
+
+    // Use cached activity if available
+    if (pet.current_activity) {
+      setActivityData({
+        activity: pet.current_activity,
+        scene: pet.current_scene ?? 'Pawdise',
+        timeOfDay: 'afternoon',
+        weather: 'sunny',
+        mood: 'peaceful',
+      });
+      return;
+    }
+
+    // Otherwise call activity API
+    fetch(`/api/pets/${params.id}/activity`)
+      .then((r) => r.json())
+      .then((d) => setActivityData({
+        activity: d.activity,
+        scene: d.scene,
+        timeOfDay: 'afternoon',
+        weather: 'sunny',
+        mood: 'peaceful',
+      }));
+  }, [status, activityData, pet, params.id]);
 
   return (
     <main className="relative min-h-dvh overflow-hidden">
       <Starfield count={40} />
       <EmotionalLoading
-        petName={MOCK_PET.name}
-        species={MOCK_PET.species}
+        petName={pet?.name ?? '...'}
+        species={pet?.species ?? 'pet'}
         visible={status === 'loading'}
         showReassurance={showReassurance}
       />
       <PetScene
-        petName={MOCK_PET.name}
-        species={MOCK_PET.species}
-        pixelArtUrl={MOCK_PET.pixel_art_url}
+        petName={pet?.name ?? ''}
+        species={pet?.species ?? ''}
+        pixelArtUrl={pet?.pixel_art_url ?? null}
         activity={activityData?.activity ?? null}
         scene={activityData?.scene ?? null}
         timeOfDay={activityData?.timeOfDay ?? null}
