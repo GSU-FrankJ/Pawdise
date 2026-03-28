@@ -14,7 +14,7 @@ export async function GET() {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const { error } = await supabase.from("pets").select("id").limit(1);
+    const { error } = await supabase.auth.getSession();
 
     if (error) throw error;
 
