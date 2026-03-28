@@ -47,20 +47,24 @@ src/
     └── sprites/                    # Fallback pixel art sprites (dog.png, cat.png, etc.)
 ```
 
-## File Ownership (Two Developers)
+## File Ownership (Three Developers)
 
-**Person A — Backend + AI**
+**Person A — Backend + AI** (macOS, Claude Code)
 - `src/app/api/**` — all API routes
 - `src/lib/**` — Supabase, Replicate, Claude helpers
 - Supabase table setup and Storage config
 - `public/sprites/` — fallback assets
 
-**Person B — Frontend + UI**
+**Person B — Frontend + UI** (macOS, Claude Code)
 - `src/app/page.tsx` — landing page
 - `src/app/create/**` — creation form
 - `src/app/pet/**` — pet view page (loading + ready states)
 - `src/components/**` — all UI components
 - Styling, animations, responsive design
+
+**Person C** (Windows, ChatGPT)
+- 大部分代码手写，不绑定固定模块
+- 修改文件前先和 A/B 确认，避免冲突
 
 **Shared (coordinate before editing)**
 - `CLAUDE.md`, `.env.example`, `package.json`, `tailwind.config.ts`
