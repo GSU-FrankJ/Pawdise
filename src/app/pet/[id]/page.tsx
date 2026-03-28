@@ -7,39 +7,45 @@ import EmotionalLoading from '@/components/EmotionalLoading';
 import PetScene from '@/components/PetScene';
 
 interface PetData {
-  id: string;
   name: string;
   species: string;
-  breed: string | null;
   pixel_art_url: string | null;
-  current_activity: string | null;
-  current_scene: string | null;
+  replicate_job_id: string | null;
 }
 
 interface ActivityData {
   activity: string;
   scene: string;
-  timeOfDay: string;
-  weather: string;
-  mood: string;
 }
 
 type PageStatus = 'loading' | 'transitioning' | 'ready';
 
 export default function PetPage() {
   const params = useParams<{ id: string }>();
+  const [pet, setPet] = useState<PetData | null>(null);
   const [status, setStatus] = useState<PageStatus>('loading');
   const [showReassurance, setShowReassurance] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
-  const [pet, setPet] = useState<PetData | null>(null);
+  const [artReady, setArtReady] = useState(false);
   const [activityData, setActivityData] = useState<ActivityData | null>(null);
 
-  const startTransition = useCallback(() => {
-    setStatus('transitioning');
-    setTimeout(() => setStatus('ready'), 800);
-  }, []);
+  // Fetch pet data on mount
+  useEffect(() => {
+    fetch(`/api/pets/${params.id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setPet({
+          name: data.name,
+          species: data.species,
+          pixel_art_url: data.pixel_art_url ?? null,
+          replicate_job_id: data.replicate_job_id ?? null,
+        });
+        // If pixel art already exists or no job was started, skip polling
+        if (data.pixel_art_url || !data.replicate_job_id) setArtReady(true);
+      });
+  }, [params.id]);
 
-  // Track elapsed time during loading
+  // Track elapsed time
   useEffect(() => {
     if (status !== 'loading') return;
     const interval = setInterval(() => setElapsedMs((t) => t + 1000), 1000);
@@ -51,95 +57,68 @@ export default function PetPage() {
     if (elapsedMs >= 30000 && !showReassurance) setShowReassurance(true);
   }, [elapsedMs, showReassurance]);
 
-  // Fetch pet data + start polling or skip straight to ready
+  // Poll pixel-art-status every 3s
   useEffect(() => {
-    if (!params.id) return;
+    if (status !== 'loading' || artReady || !pet) return;
 
-    async function init() {
-      const res = await fetch(`/api/pets/${params.id}`);
-      if (!res.ok) return;
-      const data: PetData = await res.json();
-      setPet(data);
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/pets/${params.id}/pixel-art-status`);
+      const data = await res.json();
 
-      // Already has pixel art — show immediately after short delay
-      if (data.pixel_art_url) {
-        setTimeout(() => startTransition(), 1200);
-        return;
+      if (data.status === 'complete' && data.pixel_art_url) {
+        setPet((p) => (p ? { ...p, pixel_art_url: data.pixel_art_url } : p));
+        setArtReady(true);
+        clearInterval(interval);
       }
+    }, 3000);
 
-      // No pixel art yet — poll for completion
-      const poll = setInterval(async () => {
-        const r = await fetch(`/api/pets/${params.id}/pixel-art-status`);
-        const j = await r.json();
-        if (j.status === 'complete' && j.pixel_art_url) {
-          clearInterval(poll);
-          setPet((prev) => prev ? { ...prev, pixel_art_url: j.pixel_art_url } : prev);
-        }
-      }, 3000);
+    return () => clearInterval(interval);
+  }, [status, artReady, pet, params.id]);
 
-      // Min 5s loading then transition when art ready
-      const check = setInterval(() => {
-        setElapsedMs((t) => {
-          if (t >= 5000) {
-            clearInterval(check);
-            clearInterval(poll);
-            startTransition();
-          }
-          return t;
-        });
-      }, 500);
+  // Transition when art ready + minimum 5s displayed
+  const startTransition = useCallback(() => {
+    setStatus('transitioning');
+    setTimeout(() => setStatus('ready'), 800);
+  }, []);
+
+  useEffect(() => {
+    if (artReady && elapsedMs >= 5000 && status === 'loading') {
+      startTransition();
     }
-
-    init();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id]);
+  }, [artReady, elapsedMs, status, startTransition]);
 
   // Fetch activity when ready
   useEffect(() => {
-    if (status !== 'ready' || activityData || !pet) return;
+    if (status !== 'ready' || activityData) return;
 
-    // Use cached activity if available
-    if (pet.current_activity) {
-      setActivityData({
-        activity: pet.current_activity,
-        scene: pet.current_scene ?? 'Pawdise',
-        timeOfDay: 'afternoon',
-        weather: 'sunny',
-        mood: 'peaceful',
-      });
-      return;
-    }
-
-    // Otherwise call activity API
     fetch(`/api/pets/${params.id}/activity`)
       .then((r) => r.json())
-      .then((d) => setActivityData({
-        activity: d.activity,
-        scene: d.scene,
-        timeOfDay: 'afternoon',
-        weather: 'sunny',
-        mood: 'peaceful',
-      }));
-  }, [status, activityData, pet, params.id]);
+      .then((data) =>
+        setActivityData({ activity: data.activity, scene: data.scene })
+      );
+  }, [status, activityData, params.id]);
+
+  const petName = pet?.name ?? '...';
+  const species = pet?.species ?? 'Other';
 
   return (
     <main className="relative min-h-dvh overflow-hidden">
       <Starfield count={40} />
       <EmotionalLoading
-        petName={pet?.name ?? '...'}
-        species={pet?.species ?? 'pet'}
+        petName={petName}
+        species={species}
         visible={status === 'loading'}
         showReassurance={showReassurance}
       />
       <PetScene
-        petName={pet?.name ?? ''}
-        species={pet?.species ?? ''}
+        petName={petName}
+        species={species}
         pixelArtUrl={pet?.pixel_art_url ?? null}
         activity={activityData?.activity ?? null}
         scene={activityData?.scene ?? null}
-        timeOfDay={activityData?.timeOfDay ?? null}
-        weather={activityData?.weather ?? null}
-        mood={activityData?.mood ?? null}
+        timeOfDay={null}
+        weather={null}
+        mood={null}
         visible={status === 'ready'}
       />
     </main>

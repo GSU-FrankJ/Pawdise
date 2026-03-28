@@ -4,6 +4,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 const TOTAL_STEPS = 3;
 
 const STEP_LABELS = ['About your pet', 'Their personality', 'Their story'];
@@ -59,33 +69,50 @@ export default function CreatePet() {
     if (submitting) return;
     setSubmitting(true);
 
-    const sessionId = crypto.randomUUID();
-    localStorage.setItem('pawdise_session_id', sessionId);
+    try {
+      const sessionId = generateUUID();
+      localStorage.setItem('pawdise_session_id', sessionId);
 
-    // POST /api/pets
-    const petRes = await fetch('/api/pets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: form.name,
-        species: form.species.toLowerCase(),
-        breed: form.breed || null,
-        traits: form.traits || null,
-        habits: form.habits || null,
-        bio: form.bio || null,
-        session_id: sessionId,
-      }),
-    });
-    const { id: petId } = await petRes.json();
+      // Create pet record
+      const createRes = await fetch('/api/pets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          species: form.species,
+          breed: form.breed.trim() || null,
+          traits: form.traits.trim() || null,
+          habits: form.habits.trim() || null,
+          bio: form.bio.trim() || null,
+          session_id: sessionId,
+        }),
+      });
 
-    // POST /api/pets/[id]/upload-photo if photo exists
-    if (form.photo) {
-      const fd = new FormData();
-      fd.append('photo', form.photo);
-      await fetch(`/api/pets/${petId}/upload-photo`, { method: 'POST', body: fd });
+      if (!createRes.ok) {
+        const err = await createRes.text();
+        setUploadError(`Failed to create pet: ${err}`);
+        setSubmitting(false);
+        return;
+      }
+
+      const { id: petId } = await createRes.json();
+      localStorage.setItem('pawdise_pet_id', petId);
+
+      // Upload photo if provided
+      if (form.photo) {
+        const photoData = new FormData();
+        photoData.append('photo', form.photo);
+        await fetch(`/api/pets/${petId}/upload-photo`, {
+          method: 'POST',
+          body: photoData,
+        });
+      }
+
+      router.push(`/pet/${petId}`);
+    } catch (e) {
+      setUploadError(`Error: ${(e as Error).message}`);
+      setSubmitting(false);
     }
-
-    router.push(`/pet/${petId}`);
   };
 
   return (
@@ -414,6 +441,13 @@ export default function CreatePet() {
             </div>
           )}
         </div>
+
+        {/* Error message */}
+        {uploadError && (
+          <p className="text-red-400 text-xs font-body mt-4 text-center">
+            {uploadError}
+          </p>
+        )}
 
         {/* Navigation buttons */}
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-cosmic-accent/10">
