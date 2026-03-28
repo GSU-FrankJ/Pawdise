@@ -65,10 +65,10 @@ export async function savePixelArtToStorage(
 ): Promise<string> {
   const response = await fetch(imageUrl);
   const buffer = await response.arrayBuffer();
-  const path = `pixel-art/${petId}.png`;
+  const path = `${petId}.png`;
 
   const { error } = await supabaseAdmin.storage
-    .from("pet-assets")
+    .from("pixel-art")
     .upload(path, Buffer.from(buffer), {
       contentType: "image/png",
       upsert: true,
@@ -76,7 +76,7 @@ export async function savePixelArtToStorage(
 
   if (error) throw error;
 
-  const { data } = supabaseAdmin.storage.from("pet-assets").getPublicUrl(path);
+  const { data } = supabaseAdmin.storage.from("pixel-art").getPublicUrl(path);
   return data.publicUrl;
 }
 
