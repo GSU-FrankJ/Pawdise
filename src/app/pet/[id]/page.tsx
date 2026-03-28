@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Starfield from '@/components/Starfield';
 import EmotionalLoading from '@/components/EmotionalLoading';
