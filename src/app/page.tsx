@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase-browser';
 
 interface Star {
   id: number;
@@ -110,25 +111,41 @@ export default function Home() {
               : 'opacity-0 translate-y-6'
           }`}
         >
-          <Link
-            href="/create"
-            className="group relative inline-flex items-center gap-2.5 bg-cosmic-glow text-cosmic-bg font-body font-semibold px-8 py-4 rounded-full text-base sm:text-lg transition-all duration-300 hover:shadow-[0_0_50px_rgba(245,200,66,0.35)] hover:scale-[1.03] active:scale-[0.97]"
-          >
-            Create my pet
-            <svg
-              className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <Link
+              href="/create"
+              className="group relative inline-flex items-center gap-2.5 bg-cosmic-glow text-cosmic-bg font-body font-semibold px-8 py-4 rounded-full text-base sm:text-lg transition-all duration-300 hover:shadow-[0_0_50px_rgba(245,200,66,0.35)] hover:scale-[1.03] active:scale-[0.97]"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-              />
-            </svg>
-          </Link>
+              Create my pet
+              <svg
+                className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+                />
+              </svg>
+            </Link>
+            <button
+              type="button"
+              onClick={() =>
+                supabase.auth.signInWithOAuth({
+                  provider: 'google',
+                  options: {
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                  },
+                })
+              }
+              className="inline-flex items-center gap-2 text-cosmic-muted hover:text-cosmic-text font-body font-medium text-sm transition-all duration-300 border border-cosmic-accent/20 hover:border-cosmic-accent/40 px-6 py-3 rounded-full"
+            >
+              Login
+            </button>
+          </div>
         </div>
       </div>
     </main>

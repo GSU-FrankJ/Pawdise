@@ -1,68 +1,54 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase-browser';
+import type { Session } from '@supabase/supabase-js';
 
 export default function AuthCallback() {
   const router = useRouter();
+  const claimed = useRef(false);
 
   useEffect(() => {
-    const handleCallback = async () => {
-      // Supabase returns tokens in the URL hash — this listens for the session
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          subscription.unsubscribe();
+    const claimAndRedirect = async (session: Session) => {
+      if (claimed.current) return;
+      claimed.current = true;
 
-          const sessionId = localStorage.getItem('pawdise_session_id');
-          const petId = localStorage.getItem('pawdise_pet_id');
+      const sessionId = localStorage.getItem('pawdise_session_id');
+      const petId = localStorage.getItem('pawdise_pet_id');
 
-          if (sessionId && petId) {
-            await fetch(`/api/pets/${petId}/claim`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ session_id: sessionId }),
-            });
+      if (sessionId && petId) {
+        await fetch(`/api/pets/${petId}/claim`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
 
-            localStorage.removeItem('pawdise_session_id');
-            localStorage.removeItem('pawdise_pet_id');
-            router.push(`/pet/${petId}`);
-          } else {
-            router.push('/');
-          }
-        }
-      });
-
-      // Also check if session already exists (e.g. page refresh)
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session) {
-        subscription.unsubscribe();
-
-        const sessionId = localStorage.getItem('pawdise_session_id');
-        const petId = localStorage.getItem('pawdise_pet_id');
-
-        if (sessionId && petId) {
-          await fetch(`/api/pets/${petId}/claim`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: sessionId }),
-          });
-
-          localStorage.removeItem('pawdise_session_id');
-          localStorage.removeItem('pawdise_pet_id');
-          router.push(`/pet/${petId}`);
-        } else {
-          router.push('/');
-        }
+        localStorage.removeItem('pawdise_session_id');
+        localStorage.removeItem('pawdise_pet_id');
       }
+
+      router.push('/dashboard');
     };
 
-    handleCallback();
+    // Listen for sign-in event (handles OAuth redirect with hash fragment)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        claimAndRedirect(session);
+      }
+    });
+
+    // Fallback: check if session already exists
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) claimAndRedirect(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, [router]);
 
   return (
