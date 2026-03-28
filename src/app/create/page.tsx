@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const TOTAL_STEPS = 3;
 
@@ -24,6 +24,7 @@ export default function CreatePet() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const [form, setForm] = useState<FormData>({
     name: '',
     species: '',
@@ -33,6 +34,17 @@ export default function CreatePet() {
     bio: '',
     photo: null,
   });
+
+  const photoPreviewUrl = useMemo(
+    () => (form.photo ? URL.createObjectURL(form.photo) : null),
+    [form.photo]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    };
+  }, [photoPreviewUrl]);
 
   const canAdvance =
     step === 1 ? form.name.trim() !== '' && form.species !== '' : true;
@@ -291,7 +303,7 @@ export default function CreatePet() {
                 {form.photo ? (
                   <div className="relative rounded-xl overflow-hidden border border-cosmic-accent/20">
                     <img
-                      src={URL.createObjectURL(form.photo)}
+                      src={photoPreviewUrl!}
                       alt="Pet preview"
                       className="w-full h-48 object-cover"
                     />
@@ -324,14 +336,17 @@ export default function CreatePet() {
                     onDrop={(e) => {
                       e.preventDefault();
                       const file = e.dataTransfer.files[0];
-                      if (
-                        file &&
-                        (file.type === 'image/jpeg' ||
-                          file.type === 'image/png') &&
-                        file.size <= 5 * 1024 * 1024
-                      ) {
-                        setForm((f) => ({ ...f, photo: file }));
+                      if (!file) return;
+                      if (!file.type.startsWith('image/')) {
+                        setUploadError('Please upload an image file');
+                        return;
                       }
+                      if (file.size > 5 * 1024 * 1024) {
+                        setUploadError('File must be under 5 MB');
+                        return;
+                      }
+                      setUploadError('');
+                      setForm((f) => ({ ...f, photo: file }));
                     }}
                     className="flex flex-col items-center justify-center gap-2 w-full h-36 rounded-xl border-2 border-dashed border-cosmic-accent/20 hover:border-cosmic-glow/30 bg-cosmic-bg/40 cursor-pointer transition-colors"
                   >
@@ -357,16 +372,29 @@ export default function CreatePet() {
                     <input
                       id="photo-input"
                       type="file"
-                      accept="image/jpeg,image/png"
+                      accept="image/*"
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file && file.size <= 5 * 1024 * 1024) {
-                          setForm((f) => ({ ...f, photo: file }));
+                        if (!file) return;
+                        if (!file.type.startsWith('image/')) {
+                          setUploadError('Please upload an image file');
+                          return;
                         }
+                        if (file.size > 5 * 1024 * 1024) {
+                          setUploadError('File must be under 5 MB');
+                          return;
+                        }
+                        setUploadError('');
+                        setForm((f) => ({ ...f, photo: file }));
                       }}
                     />
                   </label>
+                )}
+                {uploadError && (
+                  <p className="text-red-400 text-xs font-body mt-2">
+                    {uploadError}
+                  </p>
                 )}
               </div>
             </div>
