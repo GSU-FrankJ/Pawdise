@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Starfield from '@/components/Starfield';
 import EmotionalLoading from '@/components/EmotionalLoading';
 import PetScene from '@/components/PetScene';
@@ -22,7 +22,6 @@ type PageStatus = 'loading' | 'transitioning' | 'ready';
 
 export default function PetPage() {
   const params = useParams<{ id: string }>();
-  const searchParams = useSearchParams();
   const skipLoading = useRef(false);
   const [pet, setPet] = useState<PetData | null>(null);
   const [status, setStatus] = useState<PageStatus>('loading');
