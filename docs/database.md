@@ -68,7 +68,7 @@ A trigger automatically creates a corresponding profile when a user signs up.
 
 # Tables
 
-## profiles
+## profiles (Legacy)
 
 Stores application-level user information.
 
@@ -135,7 +135,7 @@ pixel-art/
 Example path:
 
 ```
-pet-photos/{user_id}/pet.png
+pet-photos/{pet_id}/pet.png
 pixel-art/{pet_id}/pixel.png
 ```
 
