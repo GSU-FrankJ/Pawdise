@@ -40,12 +40,26 @@ export async function GET(
   const result = await pollJobStatus(pet.replicate_job_id);
 
   if (result.status === "complete" && result.outputUrl) {
-    const pixelArtUrl = await savePixelArtToStorage(id, result.outputUrl);
-    await supabaseAdmin
-      .from("pets")
-      .update({ pixel_art_url: pixelArtUrl })
-      .eq("id", id);
-    return NextResponse.json({ status: "complete", pixel_art_url: pixelArtUrl });
+    try {
+      const pixelArtUrl = await savePixelArtToStorage(id, result.outputUrl);
+      const { error: updateError } = await supabaseAdmin
+        .from("pets")
+        .update({ pixel_art_url: pixelArtUrl })
+        .eq("id", id);
+      if (updateError) {
+        return NextResponse.json(
+          { status: "complete", pixel_art_url: result.outputUrl, _dbError: updateError.message },
+          { status: 200 }
+        );
+      }
+      return NextResponse.json({ status: "complete", pixel_art_url: pixelArtUrl });
+    } catch (err) {
+      // Storage save failed — return Replicate URL directly so frontend can still show it
+      return NextResponse.json(
+        { status: "complete", pixel_art_url: result.outputUrl, _storageError: (err as Error).message },
+        { status: 200 }
+      );
+    }
   }
 
   if (result.status === "failed") {
