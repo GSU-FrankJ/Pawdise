@@ -73,11 +73,11 @@ export default function PetScene({
 
         {/* Pet name + species badge */}
         <div className="flex items-center gap-3 mb-4">
-          <h1 className="font-display text-3xl sm:text-4xl font-semibold text-cosmic-text">
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-cosmic-text">
             {petName}
           </h1>
-          <span className="text-xs font-body font-medium text-cosmic-glow bg-cosmic-glow/10 px-3 py-1 rounded-full">
-            {species}
+          <span className="text-sm bg-cosmic-glow/10 px-2.5 py-1 rounded-full">
+            {emoji}
           </span>
         </div>
 
