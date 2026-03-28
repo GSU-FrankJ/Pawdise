@@ -10,7 +10,7 @@ Pawdise is a web app for pet owners who have lost their pets. Users upload a pho
 
 - **Frontend + API**: Next.js 14 (App Router), deployed on Vercel
 - **Database + Storage + Auth**: Supabase (Postgres, Supabase Storage, Google OAuth)
-- **Text AI**: Anthropic Claude API (claude-sonnet-4-6) — generates pet activity descriptions
+- **Text AI**: Anthropic Claude API (claude-sonnet-4-6) — generates pet activity descriptions (no chat, observation only)
 - **Image AI**: Replicate (nerijs/pixel-art-xl) — generates pixel art from pet photos
 - **Styling**: Tailwind CSS
 
@@ -24,7 +24,7 @@ src/
 │   │   └── page.tsx                # 3-step pet creation form
 │   ├── pet/
 │   │   └── [id]/
-│   │       └── page.tsx            # Pet view (loading state + ready state)
+│   │       └── page.tsx            # Pet view (emotional loading → ready state)
 │   └── api/
 │       └── pets/
 │           ├── route.ts            # POST /api/pets
@@ -38,7 +38,10 @@ src/
 │               │   └── route.ts    # GET — Claude generates activity
 │               └── claim/
 │                   └── route.ts    # POST — associate guest pet with user
-├── components/                     # Shared UI components
+├── components/
+│   ├── EmotionalLoading.tsx        # Loading page: rotating warm messages, particle animation, shimmer sprite
+│   ├── PetScene.tsx                # Ready state: pixel art + activity text + scene details
+│   └── ...                         # Other shared UI components
 ├── lib/
 │   ├── supabase.ts                 # Supabase client init
 │   ├── replicate.ts                # Replicate API helpers
@@ -58,8 +61,8 @@ src/
 **Person B — Frontend + UI** (macOS, Claude Code)
 - `src/app/page.tsx` — landing page
 - `src/app/create/**` — creation form
-- `src/app/pet/**` — pet view page (loading + ready states)
-- `src/components/**` — all UI components
+- `src/app/pet/**` — pet view page (emotional loading → ready state)
+- `src/components/**` — all UI components (EmotionalLoading, PetScene, etc.)
 - Styling, animations, responsive design
 
 **Person C** (Windows, ChatGPT)
@@ -138,4 +141,6 @@ Interactive:   #7C5CBF (cosmic-accent)
 - **Never commit `.env.local`** — use `.env.example` as reference
 - **Always handle loading and error states** — no blank screens
 - **Mobile-first** — design for 375px width first, then scale up
-- **Pixel art fallback** — if Replicate fails, use species-based sprites from `/public/sprites/`
+- **Pixel art multi-layer fallback** — Layer 1: auto-retry with different seed → Layer 2: text-only prompt fallback → Layer 3: species sprite from `/public/sprites/`
+- **Emotional loading page** — rotating warm messages personalized with pet name, minimum 5s display even if generation is instant, reassurance message after 30s
+- **Demo data** — pre-generate 2–3 pets (dog, cat, rabbit) with pixel art + activity stored in Supabase for reliable demo
