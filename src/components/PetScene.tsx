@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { getSpeciesEmoji } from './SpeciesEmoji';
+import { supabase } from '@/lib/supabase-browser';
 
 interface PetSceneProps {
   petName: string;
@@ -45,6 +46,14 @@ export default function PetScene({
         </Link>
         <button
           type="button"
+          onClick={() =>
+            supabase.auth.signInWithOAuth({
+              provider: 'google',
+              options: {
+                redirectTo: `${window.location.origin}/auth/callback`,
+              },
+            })
+          }
           className="text-cosmic-muted hover:text-cosmic-text text-sm font-body font-medium transition-colors border border-cosmic-accent/20 px-4 py-1.5 rounded-full"
         >
           Sign in

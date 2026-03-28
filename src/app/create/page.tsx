@@ -59,19 +59,50 @@ export default function CreatePet() {
     if (submitting) return;
     setSubmitting(true);
 
-    // Generate session_id and persist to localStorage
-    const sessionId = crypto.randomUUID();
-    localStorage.setItem('pawdise_session_id', sessionId);
+    try {
+      const sessionId = crypto.randomUUID();
+      localStorage.setItem('pawdise_session_id', sessionId);
 
-    // TODO: Replace mocks with real API calls when Person A delivers
-    // Mock POST /api/pets
-    const mockPetId = crypto.randomUUID();
+      // Create pet record
+      const createRes = await fetch('/api/pets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          species: form.species,
+          breed: form.breed.trim() || null,
+          traits: form.traits.trim() || null,
+          habits: form.habits.trim() || null,
+          bio: form.bio.trim() || null,
+          session_id: sessionId,
+        }),
+      });
 
-    // Mock POST /api/pets/[id]/upload-photo (if photo exists)
-    // In real version: upload form.photo via FormData
+      if (!createRes.ok) {
+        const err = await createRes.text();
+        setUploadError(`Failed to create pet: ${err}`);
+        setSubmitting(false);
+        return;
+      }
 
-    // Redirect to pet page
-    router.push(`/pet/${mockPetId}`);
+      const { id: petId } = await createRes.json();
+      localStorage.setItem('pawdise_pet_id', petId);
+
+      // Upload photo if provided
+      if (form.photo) {
+        const photoData = new FormData();
+        photoData.append('photo', form.photo);
+        await fetch(`/api/pets/${petId}/upload-photo`, {
+          method: 'POST',
+          body: photoData,
+        });
+      }
+
+      router.push(`/pet/${petId}`);
+    } catch (e) {
+      setUploadError(`Error: ${(e as Error).message}`);
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -400,6 +431,13 @@ export default function CreatePet() {
             </div>
           )}
         </div>
+
+        {/* Error message */}
+        {uploadError && (
+          <p className="text-red-400 text-xs font-body mt-4 text-center">
+            {uploadError}
+          </p>
+        )}
 
         {/* Navigation buttons */}
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-cosmic-accent/10">
