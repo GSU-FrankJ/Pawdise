@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
   pollJobStatus,
-  savePixelArtToStorage,
   retryPixelArtGeneration,
   triggerTextOnlyGeneration,
 } from "@/lib/replicate";
@@ -37,12 +36,11 @@ export async function GET(
   const result = await pollJobStatus(pet.replicate_job_id);
 
   if (result.status === "complete" && result.outputUrl) {
-    const pixelArtUrl = await savePixelArtToStorage(id, result.outputUrl);
     await supabaseAdmin
       .from("pets")
-      .update({ pixel_art_url: pixelArtUrl })
+      .update({ pixel_art_url: result.outputUrl })
       .eq("id", id);
-    return NextResponse.json({ status: "complete", pixel_art_url: pixelArtUrl });
+    return NextResponse.json({ status: "complete", pixel_art_url: result.outputUrl });
   }
 
   if (result.status === "failed") {
