@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import Starfield from '@/components/Starfield';
 import EmotionalLoading from '@/components/EmotionalLoading';
 import PetScene from '@/components/PetScene';
@@ -22,6 +22,8 @@ type PageStatus = 'loading' | 'transitioning' | 'ready';
 
 export default function PetPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const skipLoading = useRef(false);
   const [pet, setPet] = useState<PetData | null>(null);
   const [status, setStatus] = useState<PageStatus>('loading');
   const [showReassurance, setShowReassurance] = useState(false);
@@ -40,8 +42,20 @@ export default function PetPage() {
           pixel_art_url: data.pixel_art_url ?? null,
           replicate_job_id: data.replicate_job_id ?? null,
         });
-        // If pixel art already exists or no job was started, skip polling
-        if (data.pixel_art_url || !data.replicate_job_id) setArtReady(true);
+
+        // If pixel art already exists, skip polling
+        if (data.pixel_art_url || !data.replicate_job_id) {
+          setArtReady(true);
+
+          // If pet is fully ready (has art + activity), skip loading screen
+          if (data.pixel_art_url && data.current_activity) {
+            skipLoading.current = true;
+            setActivityData({
+              activity: data.current_activity,
+              scene: data.current_scene ?? null,
+            });
+          }
+        }
       });
   }, [params.id]);
 
@@ -82,7 +96,11 @@ export default function PetPage() {
   }, []);
 
   useEffect(() => {
-    if (artReady && elapsedMs >= 5000 && status === 'loading') {
+    if (!artReady || status !== 'loading') return;
+    // Skip 5s wait if pet is already fully generated
+    if (skipLoading.current) {
+      startTransition();
+    } else if (elapsedMs >= 5000) {
       startTransition();
     }
   }, [artReady, elapsedMs, status, startTransition]);
