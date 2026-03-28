@@ -4,6 +4,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 const TOTAL_STEPS = 3;
 
 const STEP_LABELS = ['About your pet', 'Their personality', 'Their story'];
@@ -60,7 +70,7 @@ export default function CreatePet() {
     setSubmitting(true);
 
     try {
-      const sessionId = crypto.randomUUID();
+      const sessionId = generateUUID();
       localStorage.setItem('pawdise_session_id', sessionId);
 
       // Create pet record
