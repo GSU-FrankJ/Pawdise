@@ -15,7 +15,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Pawdise — Where they still wander',
+  title: 'Pawdise — A place where your pet lives on',
   description:
     'A quiet world where your beloved pet lives on — happy, peaceful, forever exploring.',
 };
