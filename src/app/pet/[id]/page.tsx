@@ -10,23 +10,40 @@ import PetScene from '@/components/PetScene';
 const MOCK_PET = {
   name: 'Mochi',
   species: 'Cat',
+  pixel_art_url: null as string | null,
 };
 
-const MOCK_ACTIVITY = {
-  activity: 'Mochi found a warm patch of starlight and curled up for a nap.',
-  scene: 'cosmic meadow',
-};
+interface ActivityData {
+  activity: string;
+  scene: string;
+  timeOfDay: string;
+  weather: string;
+  mood: string;
+}
+
+// TODO: Replace with real GET /api/pets/[id]/activity
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function fetchActivity(petId: string): Promise<ActivityData> {
+  await new Promise((r) => setTimeout(r, 500));
+  return {
+    activity:
+      'Mochi found a warm patch of starlight and curled up for a nap.',
+    scene: 'cosmic meadow',
+    timeOfDay: 'afternoon',
+    weather: 'starlit',
+    mood: 'peaceful',
+  };
+}
 
 type PageStatus = 'loading' | 'transitioning' | 'ready';
 
 export default function PetPage() {
   const params = useParams<{ id: string }>();
-  // TODO: Use params.id to fetch pet data when API is ready
-  void params;
   const [status, setStatus] = useState<PageStatus>('loading');
   const [showReassurance, setShowReassurance] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [artReady, setArtReady] = useState(false);
+  const [activityData, setActivityData] = useState<ActivityData | null>(null);
 
   // Track elapsed time
   useEffect(() => {
@@ -45,7 +62,7 @@ export default function PetPage() {
     if (status !== 'loading') return;
     const interval = setInterval(() => {
       // TODO: Replace with real GET /api/pets/[id]/pixel-art-status
-      if (elapsedMs >= 8000) {
+      if (elapsedMs >= 3000) {
         setArtReady(true);
         clearInterval(interval);
       }
@@ -65,6 +82,12 @@ export default function PetPage() {
     }
   }, [artReady, elapsedMs, status, startTransition]);
 
+  // Fetch activity when ready
+  useEffect(() => {
+    if (status !== 'ready' || activityData) return;
+    fetchActivity(params.id).then(setActivityData);
+  }, [status, activityData, params.id]);
+
   return (
     <main className="relative min-h-dvh overflow-hidden">
       <Starfield count={40} />
@@ -77,8 +100,12 @@ export default function PetPage() {
       <PetScene
         petName={MOCK_PET.name}
         species={MOCK_PET.species}
-        activity={MOCK_ACTIVITY.activity}
-        scene={MOCK_ACTIVITY.scene}
+        pixelArtUrl={MOCK_PET.pixel_art_url}
+        activity={activityData?.activity ?? null}
+        scene={activityData?.scene ?? null}
+        timeOfDay={activityData?.timeOfDay ?? null}
+        weather={activityData?.weather ?? null}
+        mood={activityData?.mood ?? null}
         visible={status === 'ready'}
       />
     </main>
