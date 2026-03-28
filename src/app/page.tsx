@@ -69,7 +69,7 @@ export default function Home() {
       {/* Hero content */}
       <div className="relative z-10 text-center px-6 max-w-md mx-auto">
         <h1
-          className={`font-display text-7xl sm:text-8xl md:text-9xl font-semibold text-cosmic-glow tracking-tight leading-[0.9] mb-5 transition-all duration-1000 delay-100 ${
+          className={`font-display text-6xl sm:text-7xl md:text-8xl font-semibold text-cosmic-glow tracking-tight leading-[0.9] mb-5 transition-all duration-1000 delay-100 ${
             mounted
               ? 'opacity-100 translate-y-0'
               : 'opacity-0 translate-y-8'
