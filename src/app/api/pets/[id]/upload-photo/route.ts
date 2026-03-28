@@ -47,11 +47,19 @@ export async function POST(
   const originalPhotoUrl = urlData.publicUrl;
 
   // Kick off Replicate pixel art generation
-  const replicateJobId = await triggerPixelArtGeneration(
-    pet.species,
-    pet.breed ?? null,
-    originalPhotoUrl
-  );
+  let replicateJobId: string;
+  try {
+    replicateJobId = await triggerPixelArtGeneration(
+      pet.species,
+      pet.breed ?? null,
+      originalPhotoUrl
+    );
+  } catch (err) {
+    return NextResponse.json(
+      { error: `Replicate error: ${(err as Error).message}` },
+      { status: 500 }
+    );
+  }
 
   // Save photo URL + job ID to DB
   const { error: updateError } = await supabaseAdmin

@@ -2,21 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
-  // Require auth
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const token = authHeader.replace("Bearer ", "");
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const body = await req.json();
-  const { name, species, breed, traits, habits, bio } = body;
+  const { name, species, breed, traits, habits, bio, session_id } = body;
 
   if (!name || !species) {
     return NextResponse.json(
@@ -28,13 +15,13 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from("pets")
     .insert({
-      user_id: user.id,
       name,
       species,
       breed: breed ?? null,
       traits: traits ?? null,
       habits: habits ?? null,
       bio: bio ?? null,
+      session_id: session_id ?? null,
     })
     .select("id")
     .single();

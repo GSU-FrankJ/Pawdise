@@ -3,13 +3,12 @@ import { supabaseAdmin } from "./supabase";
 
 const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN! });
 
-// nerijs/pixel-art-xl latest version
-const PIXEL_ART_MODEL =
-  "nerijs/pixel-art-xl:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd374a";
+// stability-ai/stable-diffusion-img2img — img2img with pixel art prompt
+const PIXEL_ART_MODEL = "stability-ai/stable-diffusion-img2img:15a3689ee13b0d2616e98820eca31d4c3abcd36672df6afce5cb6feb1d66087d";
 
 function buildPrompt(species: string, breed?: string | null): string {
   const subject = breed ? `${breed} ${species}` : species;
-  return `pixel art portrait of a ${subject}, 16-bit style, centered, clean background, cute, game sprite`;
+  return `pixel art of a ${subject}, 16-bit style, cute, game sprite, centered, clean background`;
 }
 
 // Trigger pixel art generation (img2img if photoUrl provided, text-only otherwise)
@@ -22,12 +21,12 @@ export async function triggerPixelArtGeneration(
   const prompt = buildPrompt(species, breed);
   const input: Record<string, unknown> = {
     prompt,
+    prompt_strength: 0.6,
     seed: seed ?? Math.floor(Math.random() * 1000000),
   };
 
   if (photoUrl) {
     input.image = photoUrl;
-    input.strength = 0.6;
   }
 
   const prediction = await replicate.predictions.create({
