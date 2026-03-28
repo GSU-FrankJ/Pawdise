@@ -89,7 +89,7 @@ export default function Home() {
               : 'opacity-0 translate-y-6'
           }`}
         >
-          Where they still wander
+          A place where your pet lives on
         </p>
 
         <p
