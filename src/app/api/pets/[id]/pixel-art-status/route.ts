@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
   pollJobStatus,
+  savePixelArtToStorage,
   retryPixelArtGeneration,
   triggerTextOnlyGeneration,
 } from "@/lib/replicate";
