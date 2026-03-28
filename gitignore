@@ -37,6 +37,10 @@ Thumbs.db
 *.swp
 *.swo
 
+# Local (personal, not shared)
+.claude/
+local/
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
