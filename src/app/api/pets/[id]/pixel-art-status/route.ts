@@ -7,6 +7,9 @@ import {
   triggerTextOnlyGeneration,
 } from "@/lib/replicate";
 
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 const MAX_RETRIES = 1;
 
 export async function GET(
