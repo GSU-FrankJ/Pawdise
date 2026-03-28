@@ -59,19 +59,33 @@ export default function CreatePet() {
     if (submitting) return;
     setSubmitting(true);
 
-    // Generate session_id and persist to localStorage
     const sessionId = crypto.randomUUID();
     localStorage.setItem('pawdise_session_id', sessionId);
 
-    // TODO: Replace mocks with real API calls when Person A delivers
-    // Mock POST /api/pets
-    const mockPetId = crypto.randomUUID();
+    // POST /api/pets
+    const petRes = await fetch('/api/pets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: form.name,
+        species: form.species.toLowerCase(),
+        breed: form.breed || null,
+        traits: form.traits || null,
+        habits: form.habits || null,
+        bio: form.bio || null,
+        session_id: sessionId,
+      }),
+    });
+    const { id: petId } = await petRes.json();
 
-    // Mock POST /api/pets/[id]/upload-photo (if photo exists)
-    // In real version: upload form.photo via FormData
+    // POST /api/pets/[id]/upload-photo if photo exists
+    if (form.photo) {
+      const fd = new FormData();
+      fd.append('photo', form.photo);
+      await fetch(`/api/pets/${petId}/upload-photo`, { method: 'POST', body: fd });
+    }
 
-    // Redirect to pet page
-    router.push(`/pet/${mockPetId}`);
+    router.push(`/pet/${petId}`);
   };
 
   return (
