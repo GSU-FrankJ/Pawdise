@@ -95,7 +95,7 @@ Stores all pets belonging to users.
 | Column             | Type      | Description                |
 | ------------------ | --------- | -------------------------- |
 | id                 | uuid (PK) | Pet ID                     |
-| owner_id           | uuid (FK) | References `auth.users.id` |
+| user_id           | uuid (FK) | References `auth.users.id` |
 | session_id         | uuid      | For guest                  |
 | name               | text      | Pet name                   |
 | species            | text      | Type of pet                |
