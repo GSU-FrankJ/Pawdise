@@ -38,7 +38,6 @@ profiles
      ▼
 pets
      │
-     ├── pet_activities
      │
      └── images (stored in Supabase Storage)
 ```
@@ -101,11 +100,17 @@ Stores all pets belonging to users.
 | name               | text      | Pet name                   |
 | species            | text      | Type of pet                |
 | description        | text      | Description of pet         |
+| breeds             | text      |                            |      
 | traits             | text      | Personality description    |
 | habits             | text      | Favorite habits            |
 | bio                | text      | Story of the pet           |
+| original_photo_url | text      | Supabase Storage URL       |
+| pixel_art_url      | text      | generated pixel art URL    |
+| current_activity   | text      | latest Claude-generated activity |
+| current_scene      | text      | e.g. "cosmic meadow"       |
 | replicate_job_id   | text      | Image generation job ID    |
-| created_at         | timestamp | Creation time              |
+| created_at         | timestamptz | Creation time            |
+| last_activity_at   | timestamptz | Last activity            |
 
 Example:
 
@@ -113,29 +118,6 @@ Example:
 name: Luna
 traits: Curious, gentle
 ```
-
----
-
-## pet_activities
-
-Stores historical activities for pets.
-
-| Column     | Type      | Description          |
-| ---------- | --------- | -------------------- |
-| id         | uuid (PK) | Activity ID          |
-| pet_id     | uuid (FK) | References `pets.id` |
-| activity   | text      | Activity description |
-| scene      | text      | Scene description    |
-| created_at | timestamp | Timestamp            |
-
-Example:
-
-```
-activity: Chasing butterflies
-scene: Sunny meadow with flowers
-```
-
-This table allows Pawdise to maintain a timeline of the pet’s life.
 
 ---
 
