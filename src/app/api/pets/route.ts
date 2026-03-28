@@ -12,6 +12,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // If authenticated, extract user_id from token
+  let userId: string | null = null;
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (token) {
+    const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+    if (user) userId = user.id;
+  }
+
   const { data, error } = await supabaseAdmin
     .from("pets")
     .insert({
@@ -22,6 +30,7 @@ export async function POST(req: NextRequest) {
       habits: habits ?? null,
       bio: bio ?? null,
       session_id: session_id ?? null,
+      user_id: userId,
     })
     .select("id")
     .single();

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/lib/supabase-browser';
 
 function generateUUID(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -73,10 +74,17 @@ export default function CreatePet() {
       const sessionId = generateUUID();
       localStorage.setItem('pawdise_session_id', sessionId);
 
+      // Check if user is logged in
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       // Create pet record
       const createRes = await fetch('/api/pets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           name: form.name.trim(),
           species: form.species,
