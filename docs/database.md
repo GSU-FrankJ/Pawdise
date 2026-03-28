@@ -1,6 +1,7 @@
 # Pawdise Database Design
 
 Database URL: https://xtegmvtawblidcsbzsgy.supabase.co
+
 Publishable Key: sb_publishable_emH17D_LlilUR0viPFRDUw_epACGFg-
 
 ## Overview
