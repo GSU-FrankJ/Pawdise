@@ -10,7 +10,7 @@ No chat. No dialogue. Just quietly watching your pet live on.
 
 ## Demo
 
-> Built in 10 hours at a hackathon.
+> First prize of HackLanta 2026 🏅
 
 **Flow:** Upload photo &rarr; AI generates pixel art &rarr; Visit your pet in Pawdise
 
